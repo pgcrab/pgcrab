@@ -1,0 +1,51 @@
+{# Basic Markdown template. Flavour in use is relatively neutral, but beware that for multi-line comments to work, <br> must be allowed by the Markdown engine. Also, slug anchors are expected to convert `_` to `-`. #}
+{%- for table_name in tables %}
+{%- set table = tables[table_name] %}
+{#- MyST ONLY (t-{{ table_name }})= -#}
+# `{{ table_name }}`
+{% if table.comment %}
+{{- table.comment }}
+{%- else %}
+*no comment*
+{%- endif %}
+
+| Column | Type | Comment |
+| ------ | ---- | ------- |
+{% for col in table.columns %}{#
+#}| `{{ col.name }}` {#
+#}| `{{ col.type | upper }}{% if col.not_null%} NOT NULL{% endif %}` {#
+#}| {% if col.comment %}{{ col.comment | linkify_schema_elements_markdown | replace("\n", "<br>") }}{% else %}—{% endif %} {#
+#}|
+{% endfor -%}
+
+{% if table.indices %}
+| Index | Reconstructed Definition |
+| ----- | ------------------------ |
+{% endif -%}
+{% for index in table.indices -%}{#
+#}| `{{ index.name }}` {#
+#}| `{{ index.def }}` {#
+#}|
+{% endfor -%}
+
+{% if table.foreign_keys %}
+| Foreign Key | Reconstructed Definition |
+| ----------- | ------------------------ |
+{% endif -%}
+{% for fk in table.foreign_keys -%}{#
+#}| `{{ fk.name }}` {#
+#}| `{{ fk.def }}` {#
+#}|
+{% endfor -%}
+
+{% if table.foreign_key_backlinks %}
+| Foreign Key Backlink | Origin Table | Reconstructed Definition |
+| -------------------- | ------------ | ------------------------ |
+{% endif -%}
+{% for fkb in table.foreign_key_backlinks -%}{#
+#}| `{{ fkb.name }}` {#
+#}| [`{{ fkb.referrer_table }}`](#{{ fkb.referrer_table | replace('_', '-') }}) {#
+#}| `{{ fkb.def }}` {#
+#}|
+{% endfor %}
+{% endfor %}
