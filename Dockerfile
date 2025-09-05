@@ -17,10 +17,10 @@ COPY --from=planner /app/recipe.json recipe.json
 RUN cargo chef cook --release --recipe-path recipe.json
 # Build application
 COPY . .
-RUN cargo build --release --bin postgres_schema_documenter
+RUN cargo build --release --bin pgcrab
 
 # Drop the Rust binary in a minimal base image that has glibc
 FROM cgr.dev/chainguard/glibc-dynamic AS runtime
 WORKDIR /app
-COPY --from=builder /app/target/release/postgres_schema_documenter /usr/local/bin/
-ENTRYPOINT ["/usr/local/bin/postgres_schema_documenter"]
+COPY --from=builder /app/target/release/pgcrab /usr/local/bin/
+ENTRYPOINT ["/usr/local/bin/pgcrab"]

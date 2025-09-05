@@ -179,7 +179,21 @@ TODO How to add to a NixOS system.
 
 ## Docker/Podman/Containers
 
+### from container registry
+
 TODO
+
+### self-build
+
+You can build with:
+```
+<podman|docker> build -t localhost/pgcrab .
+```
+
+Run using:
+```
+<podman|docker> run localhost/pgcrab --help
+```
 
 ## Use in GitHub Actions
 
