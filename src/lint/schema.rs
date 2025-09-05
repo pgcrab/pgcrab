@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 use std::{collections::BTreeSet, path::Path};
 
 use eyre::{Context, ContextCompat};

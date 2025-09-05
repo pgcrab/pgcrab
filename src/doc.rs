@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 pub mod combine;
 pub mod convert;
 pub mod gather_comments;

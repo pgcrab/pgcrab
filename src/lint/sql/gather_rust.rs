@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! Module to find SQL queries embedded in Rust source code.
 //!
 //! # LLMs

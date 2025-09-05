@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! Lint rules covering day-to-day SQL parts of the 'Don't Do This' wiki page
 //! for Postgres.
 //! See: <https://wiki.postgresql.org/wiki/Don't_Do_This>

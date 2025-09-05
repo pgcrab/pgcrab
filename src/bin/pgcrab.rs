@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 use std::{collections::BTreeMap, fs::File, path::PathBuf};
 
 use clap::Parser;

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 use super::{gather_comments::TotalHarvest, intermediate::IntermediateSchema};
 
 /// Filters out (removes) comments in the harvest, if:

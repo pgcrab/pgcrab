@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! Schema lint rules taken from [`pg-index-health-sql`].
 //! Not all rules were adopted. Some are instead part of the 'Do Not Do This' set.
 //!
