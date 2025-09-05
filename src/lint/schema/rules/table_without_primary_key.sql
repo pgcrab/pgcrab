@@ -1,3 +1,5 @@
+-- SPDX-License-Identifier: Apache-2.0
+
 /*
  * Copyright (c) 2019-2025. Ivan Vakhrushev and others.
  * https://github.com/mfvanek/pg-index-health-sql

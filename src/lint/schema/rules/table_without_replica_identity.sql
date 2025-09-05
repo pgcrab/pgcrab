@@ -1,3 +1,7 @@
+-- SPDX-FileCopyrightText: 2025 Olivier 'reivilibre'
+--
+-- SPDX-License-Identifier: Apache-2.0
+
 -- This lint rule is part of the pgCrab project.
 
 -- Find tables that don't have a specific replica identity set,
