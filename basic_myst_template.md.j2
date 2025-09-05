@@ -1,0 +1,37 @@
+{#
+SPDX-FileCopyrightText: 2025 Olivier 'reivilibre'
+
+SPDX-License-Identifier: GPL-3.0-or-later
+#}
+
+{# Basic Markdown template. Flavour in use is MyST. #}
+{%- for table_name in tables %}
+{%- set table = tables[table_name] %}
+(t-{{ table_name }})=
+# `{{ table_name }}`
+
+{% if table.comment %}
+{{- table.comment }}
+{%- else %}
+*no comment*
+{%- endif %}
+
+<table>
+<thead>
+  <tr>
+    <th>Column</th>
+    <th>Type</th>
+    <th>Comment</th>
+  </tr>
+</thead>
+<tbody>
+  {%- for col in table.columns %}
+  <tr>
+    <td><code>{{ col.name }}</code></td>
+    <td><code>{{ col.type | upper }}{% if col.not_null %} NOT NULL{% endif %}</code></td>
+    <td>{% if col.comment %}{{ col.comment }}{% else %}—{% endif %}</td>
+  </tr>
+  {%- endfor %}
+</tbody>
+</table>
+{% endfor %}

@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2025 Olivier 'reivilibre'
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 # build file mostly cribbed from https://github.com/LukeMathWalker/cargo-chef
 
 FROM docker.io/lukemathwalker/cargo-chef:latest-rust-1.86.0 AS chef

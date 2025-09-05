@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2025 Olivier 'reivilibre'
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 {
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/23.05";
