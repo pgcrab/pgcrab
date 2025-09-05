@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 
 use eyre::Context;
 
-use crate::intermediate::{Column, ForeignKey, Index, IntermediateSchema, Table};
+use crate::doc::intermediate::{Column, ForeignKey, Index, IntermediateSchema, Table};
 
 // The only Postgres schema we will export. TODO on making it configurable.
 const SCHEMA_NAME: &str = "public";
@@ -14,7 +14,7 @@ pub fn gather_schema(db: &mut postgres::Client) -> eyre::Result<IntermediateSche
 
     for row in db
         .query(
-            "SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname = $1",
+            "SELECT quote_ident(tablename) FROM pg_catalog.pg_tables WHERE schemaname = $1",
             &[&SCHEMA_NAME],
         )
         .context("failed to list tables")?

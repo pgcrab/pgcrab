@@ -1,0 +1,76 @@
+/*
+ * Copyright (c) 2019-2025. Ivan Vakhrushev and others.
+ * https://github.com/mfvanek/pg-index-health-sql
+ *
+ * Licensed under the Apache License 2.0
+ */
+
+-- Finds objects whose names have a length of max_identifier_length (usually it is 63).
+-- The problem is that Postgres silently truncates such long names.
+-- For example, if you have a migration where you are trying to create two objects with very long names
+-- that start the same way (such as an index or constraint) and you use the "if not exists" statement,
+-- you might end up with only one object in the database instead of two.
+--
+-- If there is an object with a name of maximum length in the database, then an overflow may have occurred.
+-- It is advisable to avoid such situations and use shorter names.
+--
+-- See https://www.postgresql.org/docs/current/runtime-config-preset.html#GUC-MAX-IDENTIFIER-LENGTH
+-- See https://www.postgresql.org/docs/current/catalog-pg-class.html
+with
+    t as (
+        select current_setting('max_identifier_length')::int as max_identifier_length
+    ),
+
+    nsp as (
+        select
+            nsp.oid,
+            nsp.nspname
+        from pg_catalog.pg_namespace nsp
+        where
+            nsp.nspname = 'public' /* TODO */
+    ),
+
+    long_names as (
+        select
+            pc.oid::regclass::text as object_name,
+            case pc.relkind
+                when 'r' then 'table'
+                when 'i' then 'index'
+                when 'S' then 'sequence'
+                when 'v' then 'view'
+                when 'm' then 'materialized view'
+                when 'p' then 'partitioned table'
+                when 'I' then 'partitioned index'
+            end as object_type
+        from
+            pg_catalog.pg_class pc
+            inner join nsp on nsp.oid = pc.relnamespace
+            inner join t on t.max_identifier_length = length(pc.relname)
+        where
+            pc.relkind in ('r', 'i', 'S', 'v', 'm', 'p', 'I')
+            /* decided not to filter by the pc.relispartition field here */
+
+        union all
+
+        select
+            case when nsp.nspname = 'public' then quote_ident(p.proname) else quote_ident(nsp.nspname) || '.' || quote_ident(p.proname) end as object_name,
+            'function' as object_type
+        from
+            pg_catalog.pg_proc p
+            inner join nsp on nsp.oid = p.pronamespace
+            inner join t on t.max_identifier_length = length(p.proname)
+
+        union all
+
+        select
+            case when nsp.nspname = 'public' then quote_ident(c.conname) else quote_ident(nsp.nspname) || '.' || quote_ident(c.conname) end as object_name,
+            'constraint' as object_type
+        from
+            pg_catalog.pg_constraint c
+            inner join nsp on nsp.oid = c.connamespace
+            inner join t on t.max_identifier_length = length(c.conname)
+    )
+
+select *
+from long_names
+order by object_type, object_name;

@@ -1,5 +1,5 @@
 [package]
-name = "postgres_schema_documenter"
+name = "pgcrab"
 version = "0.1.0"
 edition = "2021"
 
@@ -16,3 +16,22 @@ postgres = "0.19.7"
 regex = "1.10.2"
 serde = { version = "1.0.188", features = ["derive"] }
 tracing = "0.1.37"
+itertools = "0.14.0"
+maplit = "1.0.2"
+strum = { version = "0.27.2", features = ["derive"] }
+catppuccin = "2.5.1"
+colored = "3.0.0"
+
+# TODO disable default features
+syn = { version = "2.0.104", features = ["parsing", "full", "visit"] }
+proc-macro2 = { version = "1.0.95", features = ["span-locations"] }
+
+rustpython-parser = "0.4.0"
+rustpython-ast = "0.4.0"
+
+sqlparser = { version = "0.58.0", features = ["visitor"] }
+
+walkdir = "2.5.0"
+
+[dev-dependencies]
+insta = { version = "1.43.1", features = ["yaml"] }

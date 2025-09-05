@@ -1,6 +1,6 @@
 use std::{path::Path, sync::Arc};
 
-use crate::intermediate::IntermediateSchema;
+use crate::doc::intermediate::IntermediateSchema;
 use eyre::Context;
 use lazy_static::lazy_static;
 use minijinja::Environment;
