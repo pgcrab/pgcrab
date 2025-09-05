@@ -42,7 +42,7 @@ fn linkify_schema_elements_markdown(text: String, schema: &IntermediateSchema) -
             if schema.tables.contains_key(object_name) {
                 // this looks like a table name; insert a link
                 // TODO get the anchor logic exactly right
-                format!("[{}](#{})", &captures[0], object_name.replace("-", "_"))
+                format!("[{}](#{})", &captures[0], object_name.replace("_", "-"))
             } else {
                 // don't linkify; leave it alone
                 captures[0].to_owned()
