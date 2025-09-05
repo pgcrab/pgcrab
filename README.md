@@ -44,6 +44,8 @@ pgcrab doc gen [--template <jinja template file>] [--harvest <path to SQL direct
 pgcrab [-C postgres://user:pass@host/dbname] doc gen [--template <jinja template file>] [--harvest <path to SQL directory or files>]
 ```
 
+A basic Markdown template is included in the repository: `basic_md_template.md.j2`.
+
 ### List uncommented items
 
 Follows the same command structure as `pgcrab doc gen` but instead provides a list of uncommented items
