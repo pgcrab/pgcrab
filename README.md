@@ -169,7 +169,13 @@ pgcrab [-C postgres://user:pass@host/dbname] doc convert path/to/schema/migratio
 
 ## Nix
 
-TODO
+### via Nix flake
+
+There is a Nix flake in this repository, with a `pgcrab` package in it.
+
+`nix build` will produce a build of pgCrab at `./result/bin/pgcrab`.
+
+TODO How to add to a NixOS system.
 
 ## Docker/Podman/Containers
 
