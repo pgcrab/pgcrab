@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2025 Olivier 'reivilibre'
+//
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 use std::{collections::BTreeMap, fs::File, path::PathBuf};

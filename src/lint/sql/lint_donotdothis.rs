@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2025 Olivier 'reivilibre'
+//
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 //! Lint rules covering day-to-day SQL parts of the 'Don't Do This' wiki page
