@@ -1,7 +1,10 @@
-use std::collections::BTreeSet;
+use std::{collections::BTreeSet, path::Path};
 
+use eyre::{Context, ContextCompat};
+use itertools::Itertools;
 use postgres::Transaction;
-use strum::EnumString;
+use strum::{EnumIter, EnumString, IntoStaticStr};
+use toml_edit::{Array, DocumentMut, Entry, Item, Table, TableLike, Value};
 
 use super::DiagnosticClassification;
 
@@ -49,7 +52,32 @@ pub enum SchemaLoc {
     },
 }
 
-#[derive(EnumString, strum::Display, Copy, Clone, Debug)]
+impl SchemaLoc {
+    /// Convert to a rule that can be matched by a concession rule.
+    pub fn to_concession_matchable_string(&self) -> String {
+        match self {
+            SchemaLoc::Table { table } => table.clone(),
+            SchemaLoc::Column { table, column } => format!("{table}/{column}"),
+            SchemaLoc::Object { object, kind: _ } => object.to_owned(),
+            SchemaLoc::ForeignKey {
+                table,
+                target_table: _,
+                foreign_key,
+            } => format!("{table}/{foreign_key}"),
+            SchemaLoc::Index { table, index } => format!("{table}/{index}"),
+            SchemaLoc::Indexes { table, indexes } => {
+                format!("{table}/{}", indexes.iter().join(","))
+            }
+            SchemaLoc::ForeignKeys {
+                table,
+                target_table: _,
+                foreign_keys,
+            } => format!("{table}/{}", foreign_keys.iter().join(",")),
+        }
+    }
+}
+
+#[derive(EnumString, strum::Display, EnumIter, IntoStaticStr, Copy, Clone, Debug)]
 #[strum(serialize_all = "snake_case")]
 pub enum SchemaDiagnosticRule {
     DontUseTimestampWithoutTimeZone,
@@ -260,4 +288,77 @@ pub fn lint_all(txn: &mut Transaction) -> eyre::Result<Vec<SchemaDiagnostic>> {
         }
     }
     Ok(out)
+}
+
+fn table_mut<'a>(item: &'a mut Item, debug_name: &str) -> eyre::Result<&'a mut dyn TableLike> {
+    if item.is_none() {
+        let mut tbl = Table::new();
+        // don't need to expose the root necessarily
+        tbl.set_implicit(true);
+        *item = Item::Table(tbl);
+    }
+    item.as_table_like_mut().with_context(|| {
+        format!("error in existing config file: {debug_name} exists but is not a table")
+    })
+}
+fn table_mut_entry<'a>(
+    table: &'a mut dyn TableLike,
+    debug_name: &str,
+    key_name: &str,
+) -> eyre::Result<&'a mut dyn TableLike> {
+    match table.entry(key_name) {
+        Entry::Occupied(occupied_entry) => occupied_entry
+            .into_mut()
+            .as_table_like_mut()
+            .with_context(|| {
+                format!("error in existing config file: {debug_name}.{key_name} exists but is not a table")
+            }),
+        Entry::Vacant(vacant_entry) => Ok(vacant_entry.insert(Item::Table(Table::new()))
+            .as_table_like_mut()
+            .unwrap()),
+    }
+}
+
+pub fn add_concessions(diagnostics: &[SchemaDiagnostic], config_path: &Path) -> eyre::Result<()> {
+    let config_text = std::fs::read_to_string(config_path).context("could not read config file")?;
+    let mut config_doc: DocumentMut = config_text.parse().context("could not parse config TOML")?;
+    let concessions_table = table_mut_entry(
+        table_mut(&mut config_doc["schema"], "schema")?,
+        "schema",
+        "concessions",
+    )?;
+
+    // if concessions_item.is_none() {
+    //     *concessions_item = Item::Table(Table::new());
+    // }
+
+    // let concessions_table = concessions_item.as_table_like_mut().with_context(|| {
+    //     format!("error in existing config file: schema.concessions exists but is not a table")
+    // })?;
+
+    for diagnostic in diagnostics {
+        let rule_id = <&'static str>::from(diagnostic.rule);
+        let matchable = diagnostic
+            .loc
+            .to_concession_matchable_string()
+            .replace("/", ".");
+
+        let rule_array = concessions_table
+            .entry(rule_id)
+            .or_insert(Item::Value(Value::Array(Array::new())));
+        let rule_array = rule_array.as_array_mut().with_context(|| format!("error in existing config file: schema.concessions.{rule_id} exists but is not an array"))?;
+        rule_array.push(Value::from(matchable));
+        rule_array.fmt();
+    }
+
+    concessions_table.fmt();
+
+    let tmp_path = config_path.parent().unwrap().join("pgcrab.toml~tmp-new");
+    std::fs::write(&tmp_path, config_doc.to_string().as_bytes())
+        .context("could not write new TOML file")?;
+
+    std::fs::rename(&tmp_path, &config_path)
+        .context("could not move config file to replace old one")?;
+
+    Ok(())
 }

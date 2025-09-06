@@ -1,10 +1,12 @@
-use std::{collections::BTreeMap, path::PathBuf};
+use std::{collections::BTreeMap, fs::File, path::PathBuf};
 
 use clap::Parser;
 use colored::Colorize;
 use eyre::Context;
+use fast_glob::glob_match;
 use itertools::Itertools;
 use pgcrab::{
+    config::{find_and_load_optional_config, ConfigFileFind, CONFIG_RELATIVE_PATH},
     doc::{
         combine::combine_harvested_comments_into_schema,
         convert::filter_harvested_by_schema_comparison, gather_comments::harvest_from_paths,
@@ -33,7 +35,14 @@ pub enum Subcommand {
         #[clap(subcommand)]
         cmd: DocCommand,
     },
-    LintSchema {},
+    LintSchema {
+        /// Add concession rules to ignore produced lints in the future.
+        ///
+        /// Will not work if a config file is not found and
+        /// the current directory is not in a version controlled repository.
+        #[clap(long = "add-concessions")]
+        add_concessions: bool,
+    },
     LintSql {
         paths: Vec<PathBuf>,
     },
@@ -180,13 +189,48 @@ fn main() -> eyre::Result<()> {
                 }
             }
         },
-        Subcommand::LintSchema {} => {
+        Subcommand::LintSchema { add_concessions } => {
             let mut db_conn = make_db_conn()?;
             let mut txn = db_conn
                 .transaction()
                 .context("could not start transaction")?;
-            let diagnostics = schema::lint_all(&mut txn).context("could not lint schema")?;
+            let mut diagnostics = schema::lint_all(&mut txn).context("could not lint schema")?;
+            diagnostics.sort_by_key(|d| <&'static str>::from(d.rule));
             txn.rollback()?;
+
+            let (config, config_find) = find_and_load_optional_config()?;
+
+            if !config.schema.concessions.is_empty() {
+                diagnostics = diagnostics
+                    .into_iter()
+                    .filter(|diagnostic| {
+                        let diagnostic_loc_matchable =
+                            diagnostic.loc.to_concession_matchable_string();
+                        for (concession_rule_pattern, object_patterns) in &config.schema.concessions
+                        {
+                            if glob_match(
+                                concession_rule_pattern.as_bytes(),
+                                <&'static str>::from(diagnostic.rule).as_bytes(),
+                            ) {
+                                for object_pattern in object_patterns {
+                                    // Replace `.` with `/` to satisfy glob rules for * vs **
+                                    let converted_object_pattern = object_pattern.replace('.', "/");
+                                    if glob_match(
+                                        converted_object_pattern.as_bytes(),
+                                        diagnostic_loc_matchable.as_bytes(),
+                                    ) {
+                                        // This diagnostic should be ignored
+                                        return false;
+                                    }
+                                }
+                            }
+                        }
+
+                        // This diagnostic was not filtered out
+                        true
+                    })
+                    .collect();
+            }
 
             let mut counts: BTreeMap<DiagnosticClassification, u32> = BTreeMap::new();
 
@@ -351,6 +395,42 @@ fn main() -> eyre::Result<()> {
                                 catppuccin::PALETTE.mocha.colors.yellow,
                             DiagnosticClassification::Error => catppuccin::PALETTE.mocha.colors.red,
                         })),
+                    );
+                }
+
+                if *add_concessions {
+                    match config_find {
+                        ConfigFileFind::Found { config_path } => {
+                            schema::add_concessions(&diagnostics, &config_path)
+                                .context("failed to add concessions")?;
+                        }
+                        ConfigFileFind::StoppedAtVersionControl { repository_root } => {
+                            let target_config_path = repository_root.join(CONFIG_RELATIVE_PATH);
+                            let target_config_dir = target_config_path.parent().unwrap();
+                            std::fs::create_dir_all(target_config_dir).with_context(|| {
+                                format!("could not make dir at {target_config_dir:?}!")
+                            })?;
+                            drop(File::create(&target_config_path).with_context(|| {
+                                format!("could not create config at {target_config_path:?}")
+                            })?);
+                            schema::add_concessions(&diagnostics, &target_config_path)
+                                .context("failed to add concessions")?;
+                        }
+                        ConfigFileFind::StoppedAtHardBoundary => {
+                            println!("Could not add concessions because there is no config file");
+                            println!("and the current directory is not in a version controlled repository.");
+                            println!(
+                                "Either move to a repository or add a `{}` file!",
+                                ".config/pgcrab.toml"
+                                    .custom_color(c(catppuccin::PALETTE.mocha.colors.flamingo))
+                            );
+                        }
+                    }
+                } else {
+                    println!(
+                        "Use {} to add concession rules to suppress these lints in the future.",
+                        "--add-concessions"
+                            .custom_color(c(catppuccin::PALETTE.mocha.colors.flamingo))
                     );
                 }
             }
