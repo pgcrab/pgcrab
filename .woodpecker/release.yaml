@@ -17,7 +17,7 @@ steps:
       platforms: linux/amd64
       # TODO: support more platforms such as these:
       # platforms: linux/amd64,linux/arm/v6,linux/arm64/v8,linux/riscv64
-      repo: git.emunest.net/${CI_REPO_OWNER}/postgres_schema_documenter
+      repo: git.emunest.net/${CI_REPO_OWNER}/pgcrab
       registry: git.emunest.net
       tags: main
       username: ${CI_REPO_OWNER}
