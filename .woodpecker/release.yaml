@@ -9,7 +9,7 @@ when:
 labels:
   platform: linux/amd64
 
-steps:
+steps: []
   # - name: build
   #   image: woodpeckerci/plugin-docker-buildx
   #   privileged: true
