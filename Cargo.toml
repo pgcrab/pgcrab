@@ -6,6 +6,12 @@
 name = "pgcrab"
 version = "0.1.0"
 edition = "2021"
+description = "Linting and documentation generation tool for Postgres database schemas"
+license = "GPL-3.0-or-later"
+
+# TODO Figure out how we describe the main repo
+# But most people will need to interact with a GitHub account...
+repository = "https://github.com/pgcrab/pgcrab.git"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
