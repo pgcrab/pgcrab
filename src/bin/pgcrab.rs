@@ -18,7 +18,7 @@ use pgcrab::{
     },
     lint::{
         schema::{self, SchemaLoc},
-        sql, DiagnosticClassification,
+        DiagnosticClassification,
     },
 };
 use postgres::NoTls;
@@ -46,9 +46,6 @@ pub enum Subcommand {
         /// the current directory is not in a version controlled repository.
         #[clap(long = "add-concessions")]
         add_concessions: bool,
-    },
-    LintSql {
-        paths: Vec<PathBuf>,
     },
 }
 
@@ -435,148 +432,6 @@ fn main() -> eyre::Result<()> {
                         "Use {} to add concession rules to suppress these lints in the future.",
                         "--add-concessions"
                             .custom_color(c(catppuccin::PALETTE.mocha.colors.flamingo))
-                    );
-                }
-            }
-        }
-        Subcommand::LintSql { paths } => {
-            let diagnostics_per_file = sql::lint_sql_in_code(paths.clone())
-                .context("could not lint SQL in source code")?;
-
-            let mut counts: BTreeMap<DiagnosticClassification, u32> = BTreeMap::new();
-
-            for (file, diagnostics) in &diagnostics_per_file {
-                let file_source: Option<Vec<String>> = std::fs::read_to_string(&file)
-                    .ok()
-                    .map(|ftxt| ftxt.split('\n').map(|s| s.to_owned()).collect());
-                for diagnostic in diagnostics {
-                    let classification = diagnostic.rule.default_classification();
-                    let description = diagnostic.rule.describe();
-                    *counts.entry(classification).or_default() += 1;
-
-                    let mut lines = description.split("\n");
-                    let firstline = lines.next().unwrap();
-
-                    println!(
-                        "{}",
-                        format!(
-                            "{} [{}]: {}",
-                            classification.to_string(),
-                            diagnostic.rule.to_string(),
-                            firstline.custom_color(c(catppuccin::PALETTE.mocha.colors.text))
-                        )
-                        .custom_color(c(match classification {
-                            DiagnosticClassification::Note =>
-                                catppuccin::PALETTE.mocha.colors.mauve,
-                            DiagnosticClassification::Warning =>
-                                catppuccin::PALETTE.mocha.colors.yellow,
-                            DiagnosticClassification::Error => catppuccin::PALETTE.mocha.colors.red,
-                        })),
-                    );
-
-                    let spacing1 =
-                        " ".repeat(diagnostic.span.0.line.to_string().len().saturating_sub(2));
-                    let spacing2 = " ".repeat(diagnostic.span.0.line.to_string().len().max(2) + 1);
-
-                    println!(
-                        "{spacing1}  {} {}:{}:{}",
-                        "-->".custom_color(c(catppuccin::PALETTE.mocha.colors.teal)),
-                        file.custom_color(c(catppuccin::PALETTE.mocha.colors.pink)),
-                        diagnostic.span.0.line,
-                        diagnostic.span.0.col,
-                    );
-                    println!(
-                        "{spacing2}{}",
-                        "|".custom_color(c(catppuccin::PALETTE.mocha.colors.peach))
-                    );
-                    let (pre, highlight, post) = if let Some(ref file_source) = file_source {
-                        let full_line = file_source
-                            .get(diagnostic.span.0.line - 1)
-                            .map(|s| s.as_str())
-                            .unwrap_or("");
-                        let num_chars = full_line.chars().count();
-                        let start = (diagnostic.span.0.col - 1).min(num_chars - 1);
-                        let end = if diagnostic.span.1.line == diagnostic.span.0.line {
-                            (diagnostic.span.1.col - 1).min(num_chars - 1)
-                        } else {
-                            num_chars - 1
-                        };
-
-                        let start_b = full_line
-                            .char_indices()
-                            .skip(start)
-                            .map(|(i, _c)| i)
-                            .next()
-                            .unwrap();
-                        let end_b = full_line
-                            .char_indices()
-                            .skip(end + 1)
-                            .map(|(i, _c)| i)
-                            .next()
-                            .unwrap_or(full_line.len());
-
-                        (
-                            &full_line[0..start_b],
-                            &full_line[start_b..end_b],
-                            &full_line[end_b..],
-                        )
-                    } else {
-                        ("???", "???", "???")
-                    };
-
-                    println!(
-                        "{:>2} {} {}{}{}",
-                        diagnostic
-                            .span
-                            .0
-                            .line
-                            .to_string()
-                            .custom_color(c(catppuccin::PALETTE.mocha.colors.peach)),
-                        "|".custom_color(c(catppuccin::PALETTE.mocha.colors.peach)),
-                        pre.custom_color(c(catppuccin::PALETTE.mocha.colors.text)),
-                        highlight.custom_color(c(catppuccin::PALETTE.mocha.colors.mauve)),
-                        post.custom_color(c(catppuccin::PALETTE.mocha.colors.text))
-                    );
-                    println!(
-                        "{spacing2}{} {}{}{}",
-                        "|".custom_color(c(catppuccin::PALETTE.mocha.colors.peach)),
-                        " ".repeat(pre.chars().count()),
-                        "^".repeat(highlight.chars().count())
-                            .custom_color(c(catppuccin::PALETTE.mocha.colors.mauve)),
-                        " ".repeat(post.chars().count())
-                    );
-                    println!(
-                        "{spacing2}{}",
-                        "|".custom_color(c(catppuccin::PALETTE.mocha.colors.crust))
-                    );
-
-                    for line in lines {
-                        println!(
-                            "  {}",
-                            line.custom_color(c(catppuccin::PALETTE.mocha.colors.subtext0))
-                        );
-                    }
-                    println!();
-                }
-            }
-            if !counts.is_empty() {
-                for (classification, count) in counts {
-                    println!(
-                        "{}",
-                        format!(
-                            "{}: SQL linting generated {} {}{}",
-                            classification.to_string(),
-                            count,
-                            classification.to_string(),
-                            if count > 1 { "s" } else { "" }
-                        )
-                        .custom_color(c(match classification {
-                            DiagnosticClassification::Note =>
-                                catppuccin::PALETTE.mocha.colors.mauve,
-                            DiagnosticClassification::Warning =>
-                                catppuccin::PALETTE.mocha.colors.yellow,
-                            DiagnosticClassification::Error => catppuccin::PALETTE.mocha.colors.red,
-                        })),
                     );
                 }
             }

@@ -34,13 +34,6 @@ strum = { version = "0.27.2", features = ["derive"] }
 catppuccin = "2.5.1"
 colored = "3.0.0"
 
-# TODO disable default features
-syn = { version = "2.0.104", features = ["parsing", "full", "visit"] }
-proc-macro2 = { version = "1.0.95", features = ["span-locations"] }
-
-rustpython-parser = "0.4.0"
-rustpython-ast = "0.4.0"
-
 sqlparser = { version = "0.58.0", features = ["visitor"] }
 
 walkdir = "2.5.0"

@@ -108,36 +108,6 @@ Many thanks to [pg-index-health-sql](https://github.com/mfvanek/pg-index-health-
 Have a lot of triggered lint rules from your existing schema and won't change them?
 Use `--add-concessions` to add concession rules to the pgCrab config file.
 
-### Lint SQL queries in your Rust or Python source code
-
-_This feature is still quite primitive._
-
-pgCrab can read your Rust and Python source code, looking for embedded SQL.
-
-It can then check for a very small number of antipatterns.
-
-```
-pgcrab lint-sql path/to/code/directory
-```
-
-<details>
-<summary>
-
-**List of SQL lint rules (click to expand):**
-
-</summary>
-
-| **Lint ID** | **Description** | **References** |
-|:------------|-----------------|----------------|
-| TODO | TODO | TODO |
-
-</details>
-
-Known issues and caveats:
-- the reporting of error locations is not entirely exact,
-  but hopefully close enough to give you an idea.
-  Essentially: escape sequences such as `\n` will
-
 ### Convert SQL comments (`--`) to real schema `COMMENT`s (descriptions)
 
 It's quite painful to use the `COMMENT ON` feature in Postgres, because you
