@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-use std::{collections::BTreeMap, fs::File, path::PathBuf};
+use std::{collections::BTreeMap, fs::File, path::PathBuf, process::ExitCode};
 
 use clap::Parser;
 use colored::Colorize;
@@ -86,7 +86,7 @@ pub enum DocCommand {
     },
 }
 
-fn main() -> eyre::Result<()> {
+fn main() -> eyre::Result<ExitCode> {
     let opts = Options::parse();
 
     let make_db_conn = || {
@@ -127,6 +127,8 @@ fn main() -> eyre::Result<()> {
                 let rendered = render::render_schema(&schema, template)?;
 
                 print!("{rendered}");
+
+                Ok(ExitCode::SUCCESS)
             }
             DocCommand::Uncommented { harvest } => {
                 let mut db_conn = make_db_conn()?;
@@ -148,6 +150,8 @@ fn main() -> eyre::Result<()> {
                         }
                     }
                 }
+
+                Ok(ExitCode::SUCCESS)
             }
             DocCommand::Convert { compare, harvest } => {
                 let mut harvested = harvest_from_paths(harvest)
@@ -188,6 +192,7 @@ fn main() -> eyre::Result<()> {
                         println!();
                     }
                 }
+                Ok(ExitCode::SUCCESS)
             }
         },
         Subcommand::LintSchema { add_concessions } => {
@@ -435,10 +440,15 @@ fn main() -> eyre::Result<()> {
                     );
                 }
             }
+
+            // TODO Allow more granularity in how different levels are exposed
+            Ok(if diagnostics.is_empty() {
+                ExitCode::SUCCESS
+            } else {
+                ExitCode::FAILURE
+            })
         }
     }
-
-    Ok(())
 }
 
 fn c(c: catppuccin::Color) -> (u8, u8, u8) {
