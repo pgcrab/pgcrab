@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 {
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
 
     crane.url = "github:ipetkov/crane";
 
@@ -28,7 +28,15 @@
         # Common arguments can be set here to avoid repeating them later
         # Note: changes here will rebuild all dependency crates
         commonArgs = {
-          src = craneLib.cleanCargoSource ./.;
+          src = pkgs.lib.cleanSourceWith {
+            src = ./.;
+
+            filter = path: type:
+              # Default crane filter
+              craneLib.filterCargoSources path type
+              # Keep .sql
+              || (pkgs.lib.hasSuffix ".sql" path);
+          };
           strictDeps = true;
 
           buildInputs = [
