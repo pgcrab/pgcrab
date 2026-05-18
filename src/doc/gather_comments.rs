@@ -64,7 +64,7 @@ pub fn harvest_from_paths(paths: &Vec<PathBuf>) -> eyre::Result<TotalHarvest> {
     fn harvest(paths: &Vec<PathBuf>) -> eyre::Result<BTreeMap<Arc<String>, HarvestedFile>> {
         let mut out = BTreeMap::new();
         for path in paths {
-            for entry in WalkDir::new(&path) {
+            for entry in WalkDir::new(path) {
                 let entry = entry.with_context(|| format!("failed to walk {path:?}"))?;
                 let Some(path_str) = entry.path().to_str() else {
                     continue;
@@ -211,6 +211,9 @@ pub fn harvest_sql_file(content: &str, file_path: Arc<String>) -> HarvestedFile 
     let alter_table_re = Regex::new(r"(?i)^\s*ALTER\s+TABLE\s+(\w+)").unwrap();
     let add_column_re = Regex::new(r"(?i)^\s*ADD\s+COLUMN\s+(\w+)").unwrap();
     let column_re = Regex::new(r"^\s*(\w+)\s+").unwrap();
+    // Use a more comprehensive regex for single-line format
+    let single_line_alter_re =
+        Regex::new(r"(?i)^\s*ALTER\s+TABLE\s+(\w+)\s+ADD\s+COLUMN\s+(\w+)").unwrap();
 
     let mut i = 0;
     while i < lines.len() {
@@ -246,9 +249,6 @@ pub fn harvest_sql_file(content: &str, file_path: Arc<String>) -> HarvestedFile 
         else if line.to_uppercase().contains("ALTER TABLE")
             && line.to_uppercase().contains("ADD COLUMN")
         {
-            // Use a more comprehensive regex for single-line format
-            let single_line_alter_re =
-                Regex::new(r"(?i)^\s*ALTER\s+TABLE\s+(\w+)\s+ADD\s+COLUMN\s+(\w+)").unwrap();
             if let Some(captures) = single_line_alter_re.captures(line) {
                 let table_name = captures.get(1).unwrap().as_str().to_string();
                 let column_name = captures.get(2).unwrap().as_str().to_string();

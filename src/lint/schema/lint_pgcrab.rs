@@ -18,5 +18,6 @@ make_lint!(
     loc_table
 );
 
+#[allow(clippy::type_complexity)]
 pub const LINTS: &[fn(&mut Transaction) -> eyre::Result<Vec<SchemaDiagnostic>>] =
     &[lint_table_without_replica_identity];

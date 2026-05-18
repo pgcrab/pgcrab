@@ -71,6 +71,7 @@ make_lint!(
     loc_object
 );
 
+#[allow(clippy::type_complexity)]
 pub const LINTS: &[fn(&mut Transaction) -> eyre::Result<Vec<SchemaDiagnostic>>] = &[
     lint_no_timestamp,
     lint_no_money,

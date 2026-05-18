@@ -75,7 +75,7 @@ pub fn find_config_file(
 pub fn find_config_from_cwd_and_env() -> eyre::Result<ConfigFileFind> {
     let home_dir = std::env::var("HOME")
         .ok()
-        .and_then(|v| PathBuf::try_from(v).ok())
+        .map(PathBuf::from)
         .filter(|p| p.exists());
 
     find_config_file(

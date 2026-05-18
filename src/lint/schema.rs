@@ -361,7 +361,7 @@ pub fn add_concessions(diagnostics: &[SchemaDiagnostic], config_path: &Path) -> 
     std::fs::write(&tmp_path, config_doc.to_string().as_bytes())
         .context("could not write new TOML file")?;
 
-    std::fs::rename(&tmp_path, &config_path)
+    std::fs::rename(&tmp_path, config_path)
         .context("could not move config file to replace old one")?;
 
     Ok(())

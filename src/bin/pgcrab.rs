@@ -97,13 +97,13 @@ fn main() -> eyre::Result<ExitCode> {
                 // connect using defaults and PGxxx env vars
                 let mut config = postgres::Client::configure();
 
-                if let Some(host) = std::env::var("PGHOST").ok() {
+                if let Ok(host) = std::env::var("PGHOST") {
                     config.host(&host);
                 }
-                if let Some(user) = std::env::var("PGUSER").ok() {
+                if let Ok(user) = std::env::var("PGUSER") {
                     config.user(&user);
                 }
-                if let Some(db) = std::env::var("PGDATABASE").ok() {
+                if let Ok(db) = std::env::var("PGDATABASE") {
                     config.dbname(&db);
                 }
                 config
@@ -207,9 +207,7 @@ fn main() -> eyre::Result<ExitCode> {
             let (config, config_find) = find_and_load_optional_config()?;
 
             if !config.schema.concessions.is_empty() {
-                diagnostics = diagnostics
-                    .into_iter()
-                    .filter(|diagnostic| {
+                diagnostics.retain(|diagnostic| {
                         let diagnostic_loc_matchable =
                             diagnostic.loc.to_concession_matchable_string();
                         for (concession_rule_pattern, object_patterns) in &config.schema.concessions
@@ -234,8 +232,7 @@ fn main() -> eyre::Result<ExitCode> {
 
                         // This diagnostic was not filtered out
                         true
-                    })
-                    .collect();
+                    });
             }
 
             let mut counts: BTreeMap<DiagnosticClassification, u32> = BTreeMap::new();
@@ -252,8 +249,8 @@ fn main() -> eyre::Result<ExitCode> {
                     "{}",
                     format!(
                         "{} [{}]: {}",
-                        classification.to_string(),
-                        diagnostic.rule.to_string(),
+                        classification,
+                        diagnostic.rule,
                         firstline.custom_color(c(catppuccin::PALETTE.mocha.colors.text))
                     )
                     .custom_color(c(match classification {
@@ -389,9 +386,9 @@ fn main() -> eyre::Result<ExitCode> {
                         "{}",
                         format!(
                             "{}: schema linting generated {} {}{}",
-                            classification.to_string(),
+                            classification,
                             count,
-                            classification.to_string(),
+                            classification,
                             if count > 1 { "s" } else { "" }
                         )
                         .custom_color(c(match classification {

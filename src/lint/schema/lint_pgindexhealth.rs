@@ -96,6 +96,7 @@ make_lint!(
 // TODO:
 // indexes_with_timestamp_in_the_middle.sql NOT SURE
 
+#[allow(clippy::type_complexity)]
 pub const LINTS: &[fn(&mut Transaction) -> eyre::Result<Vec<SchemaDiagnostic>>] = &[
     lint_possible_object_name_truncation,
     lint_duplicate_indexes,

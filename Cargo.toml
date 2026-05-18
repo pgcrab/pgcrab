@@ -15,7 +15,7 @@ repository = "https://github.com/pgcrab/pgcrab.git"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-rust-version = "1.69"
+rust-version = "1.81"
 
 [dependencies]
 clap = { version = "4.2.1", features = ["derive", "env"] }
